@@ -1,61 +1,127 @@
 import React, { useState } from 'react';
-import { Card, Form, Button, InputGroup, Badge, Accordion, Row, Col, OverlayTrigger, Tooltip } from 'react-bootstrap';
-import { FaFilter, FaPlus, FaTimes, FaSearch, FaUndo, FaCheck } from 'react-icons/fa';
+import { Card, Form, Button, InputGroup, Badge, Row, Col, OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { FaFilter, FaTimes, FaSearch, FaUndo, FaCheck } from 'react-icons/fa';
 
 function FilterPanel({ columns, filters, onFiltersChange, onApplyFilters, onResetFilters }) {
-  const [selectedColumn, setSelectedColumn] = useState(0);
-  const [filterType, setFilterType] = useState('greaterThan');
-  const [filterValue, setFilterValue] = useState('');
-  const [minValue, setMinValue] = useState('');
-  const [maxValue, setMaxValue] = useState('');
+  // 为每个字段创建一个初始状态对象
+  const initialFieldStates = columns.map((_, index) => ({
+    filterType: 'greaterThan',
+    filterValue: '',
+    minValue: '',
+    maxValue: '',
+    active: false
+  }));
+  
+  const [fieldStates, setFieldStates] = useState(initialFieldStates);
+
+  // 更新字段状态
+  const updateFieldState = (columnIndex, property, value) => {
+    const newFieldStates = [...fieldStates];
+    newFieldStates[columnIndex] = {
+      ...newFieldStates[columnIndex],
+      [property]: value
+    };
+    setFieldStates(newFieldStates);
+  };
+
+  // 切换筛选类型
+  const toggleFilterType = (columnIndex) => {
+    const currentType = fieldStates[columnIndex].filterType;
+    let nextType;
+    
+    switch (currentType) {
+      case 'greaterThan': nextType = 'lessThan'; break;
+      case 'lessThan': nextType = 'equals'; break;
+      case 'equals': nextType = 'range'; break;
+      case 'range': nextType = 'greaterThan'; break;
+      default: nextType = 'greaterThan';
+    }
+    
+    updateFieldState(columnIndex, 'filterType', nextType);
+  };
 
   // 添加筛选条件
-  const addFilter = () => {
+  const addFilter = (columnIndex) => {
+    const fieldState = fieldStates[columnIndex];
+    
     // 验证输入
-    if (filterType === 'range') {
-      if (minValue === '' || maxValue === '') {
+    if (fieldState.filterType === 'range') {
+      if (fieldState.minValue === '' || fieldState.maxValue === '') {
         alert('请输入区间的最小值和最大值');
         return;
       }
-      if (parseFloat(minValue) >= parseFloat(maxValue)) {
+      if (parseFloat(fieldState.minValue) >= parseFloat(fieldState.maxValue)) {
         alert('最小值必须小于最大值');
         return;
       }
-    } else if (filterValue === '') {
+    } else if (fieldState.filterValue === '') {
       alert('请输入筛选值');
       return;
     }
 
     // 创建新的筛选条件
     const newFilter = {
-      column: parseInt(selectedColumn),
-      type: filterType,
+      column: columnIndex,
+      type: fieldState.filterType,
     };
 
-    if (filterType === 'range') {
-      newFilter.min = parseFloat(minValue);
-      newFilter.max = parseFloat(maxValue);
+    if (fieldState.filterType === 'range') {
+      newFilter.min = parseFloat(fieldState.minValue);
+      newFilter.max = parseFloat(fieldState.maxValue);
     } else {
-      newFilter.value = parseFloat(filterValue);
+      newFilter.value = parseFloat(fieldState.filterValue);
     }
 
-    // 更新筛选条件列表
-    const updatedFilters = [...filters, newFilter];
+    // 检查是否已存在相同列的筛选条件
+    const existingFilterIndex = filters.findIndex(f => f.column === columnIndex);
+    let updatedFilters;
+    
+    if (existingFilterIndex !== -1) {
+      // 替换现有的筛选条件
+      updatedFilters = [...filters];
+      updatedFilters[existingFilterIndex] = newFilter;
+    } else {
+      // 添加新的筛选条件
+      updatedFilters = [...filters, newFilter];
+    }
+    
     onFiltersChange(updatedFilters);
-
-    // 重置输入
-    setFilterValue('');
-    setMinValue('');
-    setMaxValue('');
+    
+    // 标记该字段为活跃状态
+    updateFieldState(columnIndex, 'active', true);
   };
 
   // 移除筛选条件
-  const removeFilter = (index) => {
-    const updatedFilters = filters.filter((_, i) => i !== index);
+  const removeFilter = (columnIndex) => {
+    const updatedFilters = filters.filter(f => f.column !== columnIndex);
     onFiltersChange(updatedFilters);
+    
+    // 重置该字段的状态
+    updateFieldState(columnIndex, 'active', false);
   };
 
-  // 获取筛选条件的文本描述
+  // 获取筛选类型的图标/文本
+  const getFilterTypeLabel = (type) => {
+    switch (type) {
+      case 'greaterThan': return '大于';
+      case 'lessThan': return '小于';
+      case 'equals': return '等于';
+      case 'range': return '区间';
+      default: return '';
+    }
+  };
+
+  // 检查某列是否已有筛选条件
+  const hasFilterForColumn = (columnIndex) => {
+    return filters.some(f => f.column === columnIndex);
+  };
+
+  // 获取某列的筛选条件
+  const getFilterForColumn = (columnIndex) => {
+    return filters.find(f => f.column === columnIndex);
+  };
+
+  // 获取筛选条件的描述文本
   const getFilterDescription = (filter) => {
     const columnName = columns[filter.column];
     
@@ -73,206 +139,137 @@ function FilterPanel({ columns, filters, onFiltersChange, onApplyFilters, onRese
     }
   };
 
+  // 验证数值输入
   const validateNumericInput = (value) => {
     return value === '' || !isNaN(parseFloat(value));
   };
 
-  const handleFilterValueChange = (e) => {
-    const value = e.target.value;
+  // 处理数值输入变化
+  const handleNumericInputChange = (columnIndex, property, value) => {
     if (validateNumericInput(value)) {
-      setFilterValue(value);
+      updateFieldState(columnIndex, property, value);
     }
-  };
-
-  const handleMinValueChange = (e) => {
-    const value = e.target.value;
-    if (validateNumericInput(value)) {
-      setMinValue(value);
-    }
-  };
-  
-  const handleMaxValueChange = (e) => {
-    const value = e.target.value;
-    if (validateNumericInput(value)) {
-      setMaxValue(value);
-    }
-  };
-
-  // 获取筛选类型的图标
-  const getFilterTypeIcon = (type) => {
-    switch (type) {
-      case 'greaterThan':
-        return '>';
-      case 'lessThan':
-        return '<';
-      case 'equals':
-        return '=';
-      case 'range':
-        return '[ ]';
-      default:
-        return '';
-    }
-  };
-
-  // 获取筛选条件的背景颜色
-  const getFilterBadgeColor = (index) => {
-    const colors = ['primary', 'success', 'info', 'warning', 'danger'];
-    return colors[index % colors.length];
   };
 
   return (
-    <Card className={`filter-panel mb-3 shadow-sm `}>
-      <Card.Header className="bg-gradient d-flex align-items-center">
-        <FaFilter className="me-2" />
-        <h5 className="mb-0">数据筛选</h5>
+    <Card className="filter-panel mb-3 shadow-sm">
+      <Card.Header className="bg-gradient d-flex align-items-center justify-content-between">
+        <div className="d-flex align-items-center">
+          <FaFilter className="me-2" />
+          <h5 className="mb-0">数据筛选</h5>
+        </div>
+        <div>
+          <Badge bg="primary" className="me-2">已选: {filters.length}</Badge>
+          <Button 
+            variant="outline-light" 
+            size="sm" 
+            onClick={onResetFilters}
+            title="重置所有筛选条件"
+          >
+            <FaUndo />
+          </Button>
+        </div>
       </Card.Header>
       <Card.Body className="pb-2">
-        <Accordion defaultActiveKey="0" className="mb-3">
-          <Accordion.Item eventKey="0">
-            <Accordion.Header>
-              <span className="fw-bold">添加筛选条件</span>
-            </Accordion.Header>
-            <Accordion.Body className="pt-3 pb-3">
-              <Form>
-                <Row className="mb-3">
-                  <Col>
-                    <Form.Group>
-                      <Form.Label className="fw-semibold">选择列</Form.Label>
-                      <Form.Select 
-                        value={selectedColumn}
-                        onChange={(e) => setSelectedColumn(e.target.value)}
-                        className="shadow-sm"
-                      >
-                        {columns.map((column, index) => (
-                          <option key={index} value={index}>
-                            {column}
-                          </option>
-                        ))}
-                      </Form.Select>
-                    </Form.Group>
-                  </Col>
-                  <Col>
-                    <Form.Group>
-                      <Form.Label className="fw-semibold">筛选类型</Form.Label>
-                      <Form.Select 
-                        value={filterType}
-                        onChange={(e) => setFilterType(e.target.value)}
-                        className="shadow-sm"
-                      >
-                        <option value="greaterThan">大于</option>
-                        <option value="lessThan">小于</option>
-                        <option value="equals">等于</option>
-                        <option value="range">区间</option>
-                      </Form.Select>
-                    </Form.Group>
-                  </Col>
-                </Row>
-
-                {filterType === 'range' ? (
-                  <Form.Group className="mb-3">
-                    <Form.Label className="fw-semibold">区间值</Form.Label>
-                    <InputGroup className="shadow-sm">
+        <div className="filter-fields-container">
+          {columns.map((column, index) => (
+            <div 
+              key={index} 
+              className={`filter-field-row p-3 mb-2 rounded ${fieldStates[index].active ? 'bg-light border border-primary' : 'bg-light'}`}
+            >
+              <div className="d-flex align-items-center justify-content-between mb-2">
+                <h6 className="mb-0 fw-bold">{column}</h6>
+                {hasFilterForColumn(index) && (
+                  <Button 
+                    variant="outline-danger" 
+                    size="sm" 
+                    onClick={() => removeFilter(index)}
+                    title="移除此筛选条件"
+                  >
+                    <FaTimes />
+                  </Button>
+                )}
+              </div>
+              
+              <Row className="g-2 align-items-center">
+                <Col xs="auto">
+                  <Button 
+                    variant="outline-secondary" 
+                    size="sm" 
+                    onClick={() => toggleFilterType(index)}
+                    className="filter-type-btn"
+                  >
+                    {getFilterTypeLabel(fieldStates[index].filterType)}
+                  </Button>
+                </Col>
+                
+                <Col>
+                  {fieldStates[index].filterType === 'range' ? (
+                    <InputGroup size="sm">
                       <Form.Control 
                         type="number" 
                         placeholder="最小值" 
-                        value={minValue}
-                        onChange={(e) => setMinValue(e.target.value)}
+                        value={fieldStates[index].minValue}
+                        onChange={(e) => handleNumericInputChange(index, 'minValue', e.target.value)}
                       />
-                      <InputGroup.Text className="bg-light">至</InputGroup.Text>
+                      <InputGroup.Text>至</InputGroup.Text>
                       <Form.Control 
                         type="number" 
                         placeholder="最大值" 
-                        value={maxValue}
-                        onChange={(e) => setMaxValue(e.target.value)}
+                        value={fieldStates[index].maxValue}
+                        onChange={(e) => handleNumericInputChange(index, 'maxValue', e.target.value)}
                       />
                     </InputGroup>
-                  </Form.Group>
-                ) : (
-                  <Form.Group className="mb-3">
-                    <Form.Label className="fw-semibold">筛选值</Form.Label>
-                    <InputGroup className="shadow-sm">
-                      <InputGroup.Text className="bg-light">
-                        {getFilterTypeIcon(filterType)}
-                      </InputGroup.Text>
-                      <Form.Control 
-                        type="number" 
-                        placeholder="输入数值" 
-                        value={filterValue}
-                        onChange={(e) => setFilterValue(e.target.value)}
-                      />
-                    </InputGroup>
-                  </Form.Group>
-                )}
-
-                <Button 
-                  variant="primary" 
-                  onClick={addFilter} 
-                  className="w-100 d-flex align-items-center justify-content-center shadow-sm"
-                >
-                  <FaPlus className="me-2" />
-                  <span>添加筛选条件</span>
-                </Button>
-              </Form>
-            </Accordion.Body>
-          </Accordion.Item>
-        </Accordion>
-
-        {filters.length > 0 && (
-          <div className="filter-conditions p-3 bg-light rounded mb-3">
-            <h6 className="d-flex align-items-center mb-3">
-              <FaSearch className="me-2 text-primary" />
-              <span>已添加的筛选条件</span>
-              <span className="ms-2 badge bg-secondary">{filters.length}</span>
-            </h6>
-            <div className="filter-tags d-flex flex-wrap gap-2 mb-3">
-              {filters.map((filter, index) => (
-                <OverlayTrigger
-                  key={index}
-                  placement="top"
-                  overlay={
-                    <Tooltip id={`tooltip-${index}`}>
-                      点击移除此筛选条件
-                    </Tooltip>
-                  }
-                >
-                  <Badge 
-                    bg={getFilterBadgeColor(index)}
-                    className="filter-tag py-2 px-3 d-flex align-items-center shadow-sm"
-                    style={{ cursor: 'pointer' }}
-                    onClick={() => removeFilter(index)}
+                  ) : (
+                    <Form.Control 
+                      type="number" 
+                      size="sm"
+                      placeholder={`输入${getFilterTypeLabel(fieldStates[index].filterType)}的值`}
+                      value={fieldStates[index].filterValue}
+                      onChange={(e) => handleNumericInputChange(index, 'filterValue', e.target.value)}
+                    />
+                  )}
+                </Col>
+                
+                <Col xs="auto">
+                  <Button 
+                    variant={hasFilterForColumn(index) ? "success" : "primary"} 
+                    size="sm" 
+                    onClick={() => addFilter(index)}
                   >
-                    <span className="me-2">{getFilterDescription(filter)}</span>
-                    <FaTimes size={12} />
+                    {hasFilterForColumn(index) ? "更新" : "添加"}
+                  </Button>
+                </Col>
+              </Row>
+              
+              {hasFilterForColumn(index) && (
+                <div className="mt-2">
+                  <Badge bg="info" className="p-2">
+                    {getFilterDescription(getFilterForColumn(index))}
                   </Badge>
-                </OverlayTrigger>
-              ))}
+                </div>
+              )}
             </div>
-            
-            <div className="d-flex gap-2">
-              <Button 
-                variant="success" 
-                onClick={onApplyFilters}
-                className="flex-grow-1 d-flex align-items-center justify-content-center shadow-sm"
-              >
-                <FaCheck className="me-2" />
-                <span>应用筛选条件</span>
-              </Button>
-              <Button 
-                variant="outline-secondary" 
-                onClick={onResetFilters}
-                className="d-flex align-items-center justify-content-center shadow-sm"
-              >
-                <FaUndo className="me-2" />
-                <span>重置</span>
-              </Button>
-            </div>
+          ))}
+        </div>
+        
+        {filters.length > 0 && (
+          <div className="d-grid gap-2 mt-3">
+            <Button 
+              variant="success" 
+              onClick={onApplyFilters}
+              className="d-flex align-items-center justify-content-center"
+            >
+              <FaCheck className="me-2" />
+              <span>应用所有筛选条件 ({filters.length})</span>
+            </Button>
           </div>
         )}
-
+        
         {filters.length === 0 && (
           <div className="text-center text-muted p-4 bg-light rounded">
             <p className="mb-0">尚未添加任何筛选条件</p>
-            <p className="small mb-0">添加条件后将在此处显示</p>
+            <p className="small mb-0">选择字段并设置筛选条件</p>
           </div>
         )}
       </Card.Body>

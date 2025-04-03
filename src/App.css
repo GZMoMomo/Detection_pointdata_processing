@@ -82,7 +82,7 @@ body {
 .app-container {
   flex: 1;
   padding: 1.5rem;
-  max-width: 1600px;
+  max-width: 2400px;
   margin: 0 auto;
 }
 
@@ -324,81 +324,23 @@ body {
 }
 
 /* ===== 筛选面板 ===== */
-.filter-panel {
-  margin-bottom: 1.5rem;
-}
 
-.filter-container {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem; /* 添加组件间距 */
-  overflow: hidden; /* 防止内部溢出 */
-}
-
-.filter-panel-scroll {
-  flex: 1;
-  min-height: 300px;
+.filter-fields-container {
+  max-height: 75vh;
   overflow-y: auto;
+  padding-right: 5px;
 }
 
-/* 统计面板滚动区 */
-.statistics-panel-scroll {
-  flex: 1;
-  min-height: 400px;
-  overflow-y: auto;
-  padding-right: 0.5rem; /* 防止滚动条遮挡内容 */
+.filter-field-row {
+  transition: all 0.2s ease;
 }
 
-/* 优化滚动条样式 */
-.filter-panel-scroll::-webkit-scrollbar,
-.statistics-panel-scroll::-webkit-scrollbar {
-  width: 6px;
+.filter-field-row:hover {
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
-/* 优化滚动条交互 */
-.filter-panel-scroll:hover::-webkit-scrollbar-thumb,
-.statistics-panel-scroll:hover::-webkit-scrollbar-thumb {
-  background: #a0a0a0;
-}
-
-.filter-panel-scroll::-webkit-scrollbar-track,
-.statistics-panel-scroll::-webkit-scrollbar-track {
-  background: rgba(99, 102, 241, 0.05);
-  border-radius: 4px;
-}
-
-
-.accordion {
-  --bs-accordion-border-color: var(--border-color);
-  --bs-accordion-border-radius: var(--border-radius);
-  --bs-accordion-inner-border-radius: calc(var(--border-radius) - 1px);
-  --bs-accordion-btn-padding-x: 1.25rem;
-  --bs-accordion-btn-padding-y: 1rem;
-  --bs-accordion-btn-color: var(--text-primary);
-  --bs-accordion-btn-bg: var(--card-bg);
-  --bs-accordion-btn-focus-border-color: var(--primary-light);
-  --bs-accordion-btn-focus-box-shadow: 0 0 0 0.25rem rgba(99, 102, 241, 0.25);
-  --bs-accordion-active-color: var(--primary-color);
-  --bs-accordion-active-bg: rgba(99, 102, 241, 0.05);
-}
-
-.accordion-button:not(.collapsed) {
-  box-shadow: none;
-}
-
-.filter-conditions {
-  border: 1px solid var(--border-color);
-}
-
-.filter-tag {
-  transition: all var(--transition-fast);
-  font-weight: 500;
-}
-
-.filter-tag:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow);
+.filter-type-btn {
+  min-width: 60px;
 }
 
 /* ===== 统计面板 ===== */

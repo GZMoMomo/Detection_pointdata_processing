@@ -6,7 +6,8 @@ import FileUploader from './components/FileUploader';
 import DataTable from './components/DataTable';
 import FilterPanel from './components/FilterPanel';
 import StatisticsPanel from './components/StatisticsPanel';
-import DataAnalysisPanel from './components/DataAnalysisPanel'; // 导入新组件
+import DataAnalysisPanel from './components/DataAnalysisPanel';
+import ChatBubble from './components/ChatBubble'; 
 import DataService from './services/DataService';
 import { motion } from 'framer-motion';
 
@@ -151,41 +152,43 @@ function App() {
               className="mb-3 main-tabs"
             >
               <Tab eventKey="filter" title="数据筛选">
-                <Row>
-                  <Col lg={4} md={5} className="filter-sidebar">
-                    <div className="filter-container">
-                      <div className="filter-panel-scroll">
-                        <FilterPanel 
-                          columns={columns} 
-                          filters={filters} 
-                          onFiltersChange={handleFiltersChange}
-                          onApplyFilters={applyFilters}
-                          onResetFilters={resetFilters}
-                        />
-                      </div>
-                      
-                      {statistics && (
-                        <div className="statistics-panel-scroll">
-                          <StatisticsPanel 
-                            statistics={statistics} 
-                            filters={filters}
-                            columns={columns}
-                            onExport={exportData}
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </Col>
-                    
-                  <Col lg={8} md={7} className="main-content">
-                    <DataTable 
-                      data={filteredData.length > 0 ? filteredData : data}
-                      columns={columns}
-                      loading={loading}
-                      filteredMode={filteredData.length > 0}
-                    />
-                  </Col>
-                </Row>
+              <Row>
+  <Col lg={4} md={5} className="filter-sidebar">
+    <div className="filter-container">
+      <div className="filter-panel-scroll">
+        <FilterPanel 
+          columns={columns} 
+          filters={filters} 
+          onFiltersChange={handleFiltersChange}
+          onApplyFilters={applyFilters}
+          onResetFilters={resetFilters}
+        />
+      </div>
+    </div>
+  </Col>
+    
+  <Col lg={6} md={5} className="main-content">
+    <DataTable 
+      data={filteredData.length > 0 ? filteredData : data}
+      columns={columns}
+      loading={loading}
+      filteredMode={filteredData.length > 0}
+    />
+  </Col>
+  
+  {statistics && (
+    <Col lg={2} md={2} className="statistics-sidebar">
+      <div className="statistics-panel-vertical">
+        <StatisticsPanel 
+          statistics={statistics} 
+          filters={filters}
+          columns={columns}
+          onExport={exportData}
+        />
+      </div>
+    </Col>
+  )}
+</Row>
               </Tab>
               <Tab eventKey="analysis" title="数据分析">
                 <Row>
@@ -202,6 +205,8 @@ function App() {
           <p>© {new Date().getFullYear()} 数据筛选与分析工具 | 版本 1.0.0</p>
         </footer>
       </Container>
+      
+      <ChatBubble />
     </div>
   );
 }
