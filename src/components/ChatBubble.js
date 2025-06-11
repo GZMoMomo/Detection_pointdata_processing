@@ -18,7 +18,7 @@ const ChatBubble = () => {
           </div>
           <div className="chat-body">
             <iframe 
-              src="https://uat.agentspro.cn/agent/outlink?hash=CINDQ1SSSDB" 
+              src="http://192.168.102.240/agent/outlink??hash=HZTPUMF39" 
               title="数据处理报告"
               width="100%"
               height="100%"

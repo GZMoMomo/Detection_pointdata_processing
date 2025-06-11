@@ -77,14 +77,17 @@ function FileUploader({ onUploadSuccess }) {
       const formData = new FormData();
       formData.append('file', fileToUpload);
       
+      console.log('开始上传文件...');
       const response = await DataService.uploadFile(formData, (progressEvent) => {
         const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
         setProgress(percentCompleted);
       });
       
+      console.log('文件上传响应:', response);
       setUploading(false);
       onUploadSuccess(response);
     } catch (err) {
+      console.error('上传失败:', err);
       setError('上传失败: ' + (err.response?.data?.error || err.message));
       setUploading(false);
     }
